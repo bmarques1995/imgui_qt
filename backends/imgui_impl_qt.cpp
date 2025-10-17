@@ -1,13 +1,16 @@
 #include "imgui_impl_qt.h"
 #include <cstdint>
+#include <QElapsedTimer>
+#include <iostream>
 
 struct ImGui_ImplQt_Data
 {
     QImGuiWidget*               Widget;
     int                         MouseTrackedArea;   // 0: not tracked, 1: client area, 2: non-client area
     int                         MouseButtonsDown;
-    int64_t                     Time;
-    int64_t                     TicksPerSecond;
+    QElapsedTimer               Timer;
+    qint64                      LastTime = 0;
+    double                      TicksPerSecond = 1e9; // QElapsedTimer uses nanoseconds
     ImGuiMouseCursor            LastMouseCursor;
     uint32_t                    KeyboardCodePage;
 
@@ -54,8 +57,9 @@ bool ImGui_ImplQt_Init(QImGuiWidget* widget)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 
     bd->Widget = widget;
-    bd->TicksPerSecond = 0;
-    bd->Time = 0;
+    bd->Timer.start();
+    bd->LastTime = bd->Timer.nsecsElapsed();
+    bd->TicksPerSecond = 1e9; // nanoseconds per second
     bd->LastMouseCursor = ImGuiMouseCursor_COUNT;
     //ImGui_ImplQt_UpdateKeyboardCodePage(io);
 
@@ -69,13 +73,11 @@ void ImGui_ImplQt_Shutdown()
     ImGuiIO& io = ImGui::GetIO();
     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 
-    // Unload XInput library
-
     io.BackendPlatformName = nullptr;
     io.BackendPlatformUserData = nullptr;
     io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors | ImGuiBackendFlags_HasSetMousePos | ImGuiBackendFlags_HasGamepad);
     platform_io.ClearPlatformHandlers();
-    IM_DELETE(bd); 
+    IM_DELETE(bd);
 }
 
 void ImGui_ImplQt_NewFrame()
@@ -87,24 +89,8 @@ void ImGui_ImplQt_NewFrame()
     // Setup display size (every frame to accommodate for window resizing)
     QRect rect = bd->Widget->geometry();
     io.DisplaySize = ImVec2((float)(rect.right() - rect.left()), (float)(rect.bottom() - rect.top()));
-}
 
-void ImGui_ImplQt_EnableDpiAwareness()
-{
-    return;
-}
-
-float ImGui_ImplQt_GetDpiScaleForHwnd(void* hwnd)
-{
-    return 0.0f;
-}
-
-float ImGui_ImplQt_GetDpiScaleForMonitor(void* monitor)
-{
-    return 0.0f;
-}
-
-void ImGui_ImplQt_EnableAlphaCompositing(void* hwnd)
-{
-    return;
+    qint64 currentTime = bd->Timer.nsecsElapsed();
+    io.DeltaTime = float(currentTime - bd->LastTime) / float(bd->TicksPerSecond);
+    bd->LastTime = currentTime;
 }
