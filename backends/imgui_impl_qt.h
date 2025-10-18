@@ -21,16 +21,16 @@
 #include <QWidget>
 #ifndef IMGUI_DISABLE
 
-class QImGuiWidget : public QWidget
-{
-public:
-    
-};
 
 // Follow "Getting Started" link and check examples/ folder to learn about using backends!
-IMGUI_IMPL_API bool     ImGui_ImplQt_Init(QImGuiWidget* widget);
+IMGUI_IMPL_API bool     ImGui_ImplQt_Init(QWidget* widget, QApplication* app);
 //IMGUI_IMPL_API bool     ImGui_ImplWin32_InitForOpenGL(void* hwnd);
 IMGUI_IMPL_API void     ImGui_ImplQt_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplQt_NewFrame();
+
+#if 0
+extern IMGUI_IMPL_API void ImGui_ImplQt_ProcessEvent(QEvent* e);
+
+#endif
 
 #endif // #ifndef IMGUI_DISABLE
