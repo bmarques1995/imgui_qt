@@ -253,8 +253,31 @@ void ImGui_ImplQt_ProcessEvent(QEvent* e)
         ImGuiKey key = ImGui_ImplQt_KeyEventToImGuiKey(ev->key());
         if (key != ImGuiKey_None)
             io.AddKeyEvent(key, e->type() == QEvent::KeyPress);
+        
+        if (e->type() == QEvent::KeyPress)
+        {
+            QString text = ev->text();
+            if (!text.isEmpty())
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                for (QChar ch : text) {
+                    io.AddInputCharacter((ImWchar)ch.unicode());
+                }
+            }
+        }
         break;
     }
+    case QEvent::InputMethod: {
+        QInputMethodEvent* ev = reinterpret_cast<QInputMethodEvent*>(e);
+        io.AddInputCharactersUTF8(ev->commitString().toUtf8().constData());
+        break;
+    }
+    case QEvent::FocusIn:
+        io.AddFocusEvent(true);
+        break;
+    case QEvent::FocusOut:
+        io.AddFocusEvent(false);
+        break;
     default:
         break;
     }
